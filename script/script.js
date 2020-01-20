@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const category = document.querySelector('.category');
     const loader = document.querySelector('.loader-wrapper');
 
+    let wishlist = [];
+
 
     const createCardGoods = (id, title, price, img) => {
         const card = document.createElement('div');
@@ -44,17 +46,23 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
     const openCart = () => {
-        event.preventDefault();
+        event.preventDefault(); // отмена стандартного браузерного поведения элемента. В данном случае - перехода по ссылке
         cart.style.display = 'flex';
     }
 
     const renderCard = items => {
         goodsWrapper.textContent = '';
-        items.forEach((item) => {
-            const { id, title, price, imgMin } = item;  // деструктуризация. Чтобы не писать каждый раз item.id и тп.
-            // console.log(item);
-            goodsWrapper.appendChild(createCardGoods(id, title, price, imgMin))
-        });
+
+        if (items.length) {
+            items.forEach((item) => {
+                const { id, title, price, imgMin } = item;  // деструктуризация. Чтобы не писать каждый раз item.id и тп.
+                // console.log(item);
+                goodsWrapper.appendChild(createCardGoods(id, title, price, imgMin))
+            });
+        } else {
+            goodsWrapper.textContent = 'Товары не найдены';
+        }
+
     };
 
 
@@ -75,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (target.classList.contains('category-item')) {
             const cat = target.dataset.category;
-            console.log(category);
+            // console.log(category);
             getGoods(renderCard, goods => goods.filter(item =>  item.category.includes(cat)));
         }
     }; 
@@ -83,11 +91,65 @@ document.addEventListener('DOMContentLoaded', () => {
     const hideLoader = () => {
         loader.style.display = 'none';
     };
+
+    const searchGoods = event => {
+        // отмена стандартного браузерного поведения элемента.
+        // В данном случае - перезагрузки страницы.Мы не будем браузером обрабатывать поиск, а будем через JS.
+        event.preventDefault(); 
+
+        const input = event.target.elements.searchGoods;
+        const inputValue = input.value.trim(); // trim убирает пробелы, так в консоль не вывалится пустой запрос
+        if (inputValue !== '') { 
+            // console.log(input.value);  // получаем содержимое формы поиска
+            // https://regexr.com/ - сайт для подбора регулярных выражений на своем тексте
+            const searchString = new RegExp(inputValue, 'i'); // создаем рег. выражение для поиска на основании введенного текста. По этому тексту ищем среди массива товаров
+
+            getGoods(renderCard, goods => goods.filter( item => searchString.test(item.title)));
+            
+        } else {
+            // данный блок в случае пустого запроса вешает класс на строку поиска.
+            //Этот css класс воспроизводит анимацию мерцания.
+            search.classList.add('error');
+            // Если еще раз навесить этот класс при следующем пустом запросе, анимация не сработает.
+            // Поэтому, необходимо через какое-то время удалить этот класс;
+            setTimeout( () => search.classList.remove('error'), 2000);
+        };
+
+        input.value = '';
+
+    };
     
+    const toggleWishlist = id => {
+        if (wishlist.indexOf(id) + 1) {
+            wishlist.splice(wishlist.indexOf(id), 1);
+            document.querySelector(`.card-add-wishlist[data-goods-id='${id}']`).classList.remove('active');
+        } else {
+            wishlist.push(id);
+            document.querySelector(`.card-add-wishlist[data-goods-id='${id}']`).classList.add('active');
+        };
+
+        console.log(wishlist);
+    };
+
+    const handlerGoods = event => {
+        const target = event.target;
+
+        if (target.classList.contains('card-add-wishlist')) {
+
+            // нестандартные атрибуты записываются в dataset и их названя преобразуются в camelCase.
+            // (если в начале названия атрибута стоит слово 'data', оно опускается).
+            // Так атрибут 'data-goods-id' мы можем найти в структуре DOM элемента через dataset.goodsId.
+            toggleWishlist(target.dataset.goodsId);
+            
+        }
+    };
+
     cartBtn.addEventListener('click', openCart);
     cart.addEventListener('click', closeCart);
     document.addEventListener('keydown', closeCart);
     category.addEventListener('click', chooseCategory);
+    search.addEventListener('submit', searchGoods);
+    goodsWrapper.addEventListener('click', handlerGoods);
 
 
     getGoods(renderCard, randomSort, hideLoader);
