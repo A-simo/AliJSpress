@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const cart = document.querySelector('.cart');
     const category = document.querySelector('.category');
     const loader = document.querySelector('.loader-wrapper');
+    const countCounter = cartBtn.querySelector('.counter');
+    const wishlistCounter = wishListBtn.querySelector('.counter');
 
     let wishlist = [];
 
@@ -17,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         card.innerHTML = `<div class="card">
                             <div class="card-img-wrapper">
                                 <img class="card-img-top" src="${img}" alt="">
-                                <button class="card-add-wishlist"
+                                <button class="card-add-wishlist ${wishlist.includes(id) ? 'active' : ''}"
                                     data-goods-id="${id}"></button>
                             </div>
                             <div class="card-body justify-content-between">
@@ -118,17 +120,33 @@ document.addEventListener('DOMContentLoaded', () => {
         input.value = '';
 
     };
+
+    const checkCount = () => {
+        wishlistCounter.textContent = wishlist.length;
+    };
+
+    const storageQuery = get => {
+        if (get) {
+            if (localStorage.getItem('wishlist')) {
+                JSON.parse(localStorage.getItem('wishlist')).forEach(id => wishlist.push(id));
+            }
+
+        } else {
+            localStorage.setItem('wishlist', JSON.stringify(wishlist))
+        }
+        checkCount();
+    };
     
     const toggleWishlist = id => {
-        if (wishlist.indexOf(id) + 1) {
+        if (wishlist.includes(id)) {
             wishlist.splice(wishlist.indexOf(id), 1);
             document.querySelector(`.card-add-wishlist[data-goods-id='${id}']`).classList.remove('active');
         } else {
             wishlist.push(id);
             document.querySelector(`.card-add-wishlist[data-goods-id='${id}']`).classList.add('active');
         };
-
-        console.log(wishlist);
+        checkCount();
+        storageQuery();
     };
 
     const handlerGoods = event => {
@@ -153,4 +171,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     getGoods(renderCard, randomSort, hideLoader);
+
+    storageQuery(true);
 });
+
+// 2:07:26
